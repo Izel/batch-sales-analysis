@@ -1,0 +1,6 @@
+pyspark
+pyspark-iceberg[gcp]
+pyspark[sql]
+google-cloud-storage
+google-cloud-pubsub
+terraform-compliance
