@@ -62,6 +62,7 @@ gcloud dataproc batches submit pyspark ../source/sales_analysis_job.py \
     --version=2.2 \
     --subnet="$SUBNET_URI" \
     --deps-bucket="$STAGING_BUCKET" \
+    --properties=spark.executor.instances=2 \
     --jars="$ICEBERG_SPARK_RUNTIME_JAR","$ICEBERG_BIGQUERY_CATALOG_JAR" 1>&1
  if [ $? -eq 0 ]; then
     echo "4. Job sent with ID: $JOB_ID"
