@@ -1,5 +1,4 @@
 from pyspark.sql import SparkSession
-import os
 
 PROJECT_ID = "sales-batch-data-analysis"
 REGION = "europe-west2"
@@ -48,19 +47,23 @@ spark = (
 
 spark.sparkContext.setLogLevel("WARN")
 
+spark.sql("""DROP VIEW IF EXISTS orders_view """)
+spark.sql("""DROP VIEW IF EXISTS orders_items_view """)
+spark.sql("""DROP VIEW IF EXISTS joined_recent_orders_items_view """)
+spark.sql("""DROP VIEW IF EXISTS item_sales_per_city_view """)
 
 # Register Base Tables as Temporary Views for Spark SQL
 spark.sql(f"""
       CREATE TEMPORARY VIEW orders_view AS
       SELECT 
       o.ORDER_ID, o.DELIVERY_CITY, o.CREATED_AT, O.ITEM_ID, O.QUANTITY 
-      FROM {os.getenv("INPUT_ORDERS_TABLE")}
+      FROM {INPUT_ORDERS_TABLE}
 """)
 
 spark.sql(f"""
       CREATE TEMPORARY VIEW order_items_view AS
       SELECT order_id, ID AS ITEM_ID, 1 AS QUANTITY
-      FROM {os.getenv("INPUT_ORDER_ITEMS_TABLE")}
+      FROM {INPUT_ORDER_ITEMS_TABLE}
       GROUP BY delivery_city, item_id
 """)
 
@@ -98,9 +101,7 @@ top_items_per_city_df = spark.sql("""
 """)
 
 # Write Results to a New Iceberg Table
-top_items_per_city_df.writeTo(os.getenv("OUTPUT_TABLE")).using(
-    "iceberg"
-).createOrReplace()
+top_items_per_city_df.writeTo(f"{OUTPUT_TABLE}").using("iceberg").createOrReplace()
 
 # Stop the SparkSession (essential for standalone scripts)
 spark.stop()
