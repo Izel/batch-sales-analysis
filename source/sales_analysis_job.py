@@ -16,7 +16,7 @@ ICEBERG_BIGQUERY_CATALOG_JAR = (
 )
 
 # Define catalog properties
-CATALOG_BUCKET = f"gs://{PROJECT_ID}-catalog"
+CATALOG_BUCKET = "gs://dw-387711160261-bucket"  # f"gs://{PROJECT_ID}-catalog"
 CATALOG_NAME = "bqms"
 CATALOG_IMPL = "org.apache.iceberg.spark.SparkCatalog"
 CATALOG_BIGQUERY_IMPL = "org.apache.iceberg.gcp.bigquery.BigQueryMetastoreCatalog"
@@ -47,10 +47,10 @@ spark = (
 
 spark.sparkContext.setLogLevel("WARN")
 
-spark.sql("""DROP VIEW IF EXISTS orders_view """)
-spark.sql("""DROP VIEW IF EXISTS orders_items_view """)
-spark.sql("""DROP VIEW IF EXISTS joined_recent_orders_items_view """)
-spark.sql("""DROP VIEW IF EXISTS item_sales_per_city_view """)
+spark.sql("DROP VIEW IF EXISTS item_sales_per_city_view")
+spark.sql("DROP VIEW IF EXISTS joined_recent_orders_items_view")
+spark.sql("DROP VIEW IF EXISTS orders_items_view")
+spark.sql("DROP VIEW IF EXISTS orders_view")
 
 # Register Base Tables as Temporary Views for Spark SQL
 spark.sql(f"""
