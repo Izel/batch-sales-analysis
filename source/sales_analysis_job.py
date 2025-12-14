@@ -26,19 +26,28 @@ WAREHOUSE_PATH = f"{CATALOG_BUCKET}/warehouse"
 # Input and output table names
 INPUT_ORDERS_TABLE = f"{CATALOG_NAME}.ecommerce.orders"
 INPUT_ORDER_ITEMS_TABLE = f"{CATALOG_NAME}.ecommerce.order_items"
-OUTPUT_TABLE = f"{CATALOG_NAME}.ecommerce.top_20_items_per_city_recent"
+OUTPUT_TABLE = f"{CATALOG_NAME}.ecommerce.top_10_items_per_city_recent"
 
 
 # SparkSession Initialization with Iceberg and BigQuery Catalog
 spark = (
     SparkSession.builder.appName("Top20ItemsPerCityLastHourSQL")
+    .config("spark.jars", f"{ICEBERG_SPARK_RUNTIME_JAR},{ICEBERG_BIGQUERY_CATALOG_JAR}")
+    .config(f"spark.sql.catalog.{CATALOG_NAME}", CATALOG_IMPL)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.catalog-impl", CATALOG_BIGQUERY_IMPL)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.warehouse", WAREHOUSE_PATH)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.gcp_project", PROJECT_ID)
+    .config(f"spark.sql.catalog.{CATALOG_NAME}.gcp_location", REGION)
     .config(
-        "spark.jars",
-        f"{os.getenv('ICEBERG_SPARK_RUNTIME_JAR')},{os.getenv('ICEBERG_BIGQUERY_CATALOG_JAR')}",
+        "spark.sql.extensions",
+        "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
     )
-    .config(f"spark.sql.catalog.{os.getenv('CATALOG_NAME')}", os.getenv("CATALOG_IMPL"))
     .getOrCreate()
 )
+
+
+spark.sparkContext.setLogLevel("WARN")
+
 
 # Register Base Tables as Temporary Views for Spark SQL
 spark.sql(f"""
@@ -62,7 +71,7 @@ spark.sql("""
       FROM orders_view o
       JOIN order_items_view oi
       ON o.ORDER_ID = oi.ORDER_ID
-      WHERE o.CREATED_AT >= (TIMESTAMP '2005-06-23 10:55:00' - INTERVAL 1 HOUR)
+      WHERE o.CREATED_AT >= (TIMESTAMP '2005-09-23 10:55:00' - INTERVAL 1 HOUR)
 """)
 
 # Step 2: Aggregate item sales per city
@@ -85,7 +94,7 @@ spark.sql("""
 top_items_per_city_df = spark.sql("""
       SELECT DELIVERY_CITY, ITEM_ID, TOTAL_QUANTITY_SOLD 
       FROM ranked_items_view 
-      WHERE rank <= 20
+      WHERE rank <= 10
 """)
 
 # Write Results to a New Iceberg Table
